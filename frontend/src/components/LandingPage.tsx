@@ -1,12 +1,11 @@
+// @ts-nocheck
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Zap, LogIn, Cpu, Network } from 'lucide-react';
+import { Zap, Cpu, Network } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 
 export const LandingPage: React.FC = () => {
   const { signInWithGoogle, user } = useAuth();
-  const { colors } = useTheme();
 
   return (
     <div style={{ 

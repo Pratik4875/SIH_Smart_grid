@@ -13,7 +13,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { setLoadState, updateDeviceConfig } from './utils/hardwareControl';
 import { getDatabase, ref, onValue } from 'firebase/database';
 import { DEFAULT_DEVICE_ID } from './firebase';
-import type { TelemetryData, LoadConfig, AIJustificationLog } from './types';
+import type { TelemetryData, LoadConfig } from './types';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -25,12 +25,9 @@ const AppContent: React.FC = () => {
   const [autoAiEnabled, setAutoAiEnabled] = useState(false);
   
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
-  const [aiLogs] = useState<AIJustificationLog[]>([]);
+  const [batteryHistory] = useState<{ timestamp: number; voltage: number }[]>([{ timestamp: Date.now(), voltage: 3.7 }]);
   const [failureRisk] = useState<number>(0);
   
-  // Dummy data for battery history since we don't have a DB store for it yet in frontend
-  const batteryHistory = [{ timestamp: Date.now(), voltage: 3.7 }];
-
   const [loadConfigs, setLoadConfigs] = useState<Record<string, LoadConfig>>({
     'RLY-001': { id: 'RLY-001', name: 'Hospital ICU / Ventilator', priority: 'CRITICAL', nominalWatts: 0.25, description: 'Pin 26', icon: 'hospital' },
     'RLY-002': { id: 'RLY-002', name: 'Emergency Streetlights', priority: 'MEDIUM', nominalWatts: 0.15, description: 'Pin 25', icon: 'lightbulb' },
@@ -137,7 +134,7 @@ const AppContent: React.FC = () => {
 
           {activeTab === 'telemetry' && (
             <motion.div key="telemetry" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-              <TelemetryGauges telemetry={telemetry} failureRisk={failureRisk} isConnected={isConnected} />
+              <TelemetryGauges telemetry={telemetry} isConnected={isConnected} />
             </motion.div>
           )}
 
@@ -155,11 +152,9 @@ const AppContent: React.FC = () => {
 
           {activeTab === 'gridbot' && (
             <motion.div key="gridbot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-              <GridBotChat
-                logs={aiLogs}
+              <GridBotChat 
                 loadConfigs={loadConfigs}
                 batteryHistory={batteryHistory}
-                telemetry={telemetry}
                 isConnected={isConnected}
                 onApplyToHardware={handleApplySimToHardware}
               />

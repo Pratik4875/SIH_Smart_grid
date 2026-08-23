@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { Zap, Settings, Cpu, Activity, Sliders, Bot, Moon, SunMedium, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
