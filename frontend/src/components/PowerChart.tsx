@@ -23,37 +23,36 @@ interface PowerChartProps {
 }
 
 export const PowerChart: React.FC<PowerChartProps> = ({ data }) => {
-  // Fallback demo points if data is just starting
   const chartData = data.length > 0 ? data : [
-    { time: '00:00', batteryV: 3.85, solarV: 4.20, powerW: 0.50, temp: 28 },
-    { time: '00:03', batteryV: 3.84, solarV: 4.22, powerW: 0.51, temp: 28 },
-    { time: '00:06', batteryV: 3.84, solarV: 4.18, powerW: 0.49, temp: 29 },
-    { time: '00:09', batteryV: 3.83, solarV: 4.30, powerW: 0.52, temp: 29 },
-    { time: '00:12', batteryV: 3.82, solarV: 4.35, powerW: 0.53, temp: 29 }
+    { time: '00:00', batteryV: 0, solarV: 0, powerW: 0, temp: 0 }
   ];
 
   return (
-    <div className="p-5 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-md shadow-xl flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-cyan-500/10 text-cyan-400 rounded-lg border border-cyan-500/20">
+    <div className="p-5 rounded-2xl bg-[#0e1320] border border-slate-800/80 shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-100">Live Microgrid Power Curves</h3>
-            <p className="text-[11px] text-slate-400">Continuous 3s Telemetry Stream vs Battery Discharge</p>
+            <h3 className="text-sm font-bold text-white">Live Microgrid Power Curves</h3>
+            <p className="text-xs text-slate-400">Continuous telemetry tracking solar generation vs battery drain</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <span className="flex items-center gap-1 text-emerald-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Battery (V)
-          </span>
-          <span className="flex items-center gap-1 text-amber-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Solar (V)
-          </span>
-          <span className="flex items-center gap-1 text-cyan-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Power (W)
-          </span>
+
+        <div className="flex items-center gap-4 text-xs font-mono">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span className="text-slate-300">Battery (V)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span className="text-slate-300">Solar (V)</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+            <span className="text-slate-300">Power (W)</span>
+          </div>
         </div>
       </div>
 
@@ -62,30 +61,31 @@ export const PowerChart: React.FC<PowerChartProps> = ({ data }) => {
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="batteryGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
                 <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
               </linearGradient>
               <linearGradient id="solarGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
                 <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
               </linearGradient>
               <linearGradient id="powerGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
+                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.15} />
                 <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
               </linearGradient>
             </defs>
 
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-            <XAxis dataKey="time" stroke="#64748b" tick={{ fontSize: 10 }} tickLine={false} />
-            <YAxis stroke="#64748b" tick={{ fontSize: 10 }} tickLine={false} domain={[0, 6]} />
+            <XAxis dataKey="time" stroke="#475569" tick={{ fontSize: 10 }} tickLine={false} />
+            <YAxis stroke="#475569" tick={{ fontSize: 10 }} tickLine={false} domain={[0, 6]} />
 
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0f172a',
+                backgroundColor: '#0b0f19',
                 borderColor: '#334155',
                 borderRadius: '0.75rem',
-                fontSize: '12px',
-                color: '#f8fafc'
+                fontSize: '11px',
+                color: '#f8fafc',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
               }}
             />
 
@@ -97,6 +97,7 @@ export const PowerChart: React.FC<PowerChartProps> = ({ data }) => {
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#batteryGrad)"
+              dot={false}
             />
             <Area
               type="monotone"
@@ -106,6 +107,7 @@ export const PowerChart: React.FC<PowerChartProps> = ({ data }) => {
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#solarGrad)"
+              dot={false}
             />
             <Area
               type="monotone"
@@ -115,6 +117,7 @@ export const PowerChart: React.FC<PowerChartProps> = ({ data }) => {
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#powerGrad)"
+              dot={false}
             />
           </AreaChart>
         </ResponsiveContainer>

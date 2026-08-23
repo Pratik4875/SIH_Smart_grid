@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Settings, Cpu } from 'lucide-react';
+import { Zap, Settings, Cpu, Activity, Sliders, Brain, LayoutGrid } from 'lucide-react';
 
 interface HeaderProps {
   isConnected: boolean;
@@ -7,8 +7,8 @@ interface HeaderProps {
   autoAiEnabled: boolean;
   onToggleAutoAi: () => void;
   onOpenSettings: () => void;
-  activeTab: 'all' | 'telemetry' | 'config' | 'simulator' | 'ai';
-  setActiveTab: (tab: 'all' | 'telemetry' | 'config' | 'simulator' | 'ai') => void;
+  activeTab: 'overview' | 'telemetry' | 'config' | 'simulator' | 'ai';
+  setActiveTab: (tab: 'overview' | 'telemetry' | 'config' | 'simulator' | 'ai') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,109 +20,103 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab
 }) => {
+  const tabs = [
+    { id: 'overview', label: 'Dashboard Overview', icon: LayoutGrid },
+    { id: 'telemetry', label: 'Telemetry & Curves', icon: Activity },
+    { id: 'config', label: 'Load Configuration', icon: Sliders },
+    { id: 'simulator', label: 'Scenario Simulator', icon: Zap },
+    { id: 'ai', label: 'AI Justification Log', icon: Brain }
+  ] as const;
+
   return (
-    <header className="space-y-4 pb-4 border-b border-slate-800">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
-            <Zap className="w-6 h-6" />
+    <header className="space-y-4">
+      {/* Top Navbar */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 py-2">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/20">
+            <div className="w-full h-full bg-[#0b0f19] rounded-[10px] flex items-center justify-center">
+              <Zap className="w-5 h-5 text-emerald-400 fill-emerald-400/20" />
+            </div>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Predictive Renewable Energy Microgrid Controller
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-lg font-bold text-white tracking-tight">
+                SolarGrid Microgrid OS
+              </h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                SIH 2026
+              </span>
+            </div>
             <p className="text-xs text-slate-400">
-              Smart India Hackathon 2026 • Edge Node: <span className="font-mono text-emerald-400">{deviceId}</span>
+              Predictive Renewable Energy & Autonomous Load-Shedding Matrix
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Connection Status */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-            <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
-            <span className={isConnected ? 'text-emerald-300 font-medium' : 'text-slate-400'}>
-              {isConnected ? 'ESP32 Streaming (Live)' : 'ESP32 Offline (Awaiting RTDB)'}
+          {/* Node Connection Badge */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium backdrop-blur-md ${
+            isConnected
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          }`}>
+            <span className="relative flex h-2 w-2">
+              {isConnected && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              )}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+            </span>
+            <span>{isConnected ? 'ESP32 Streaming' : 'Awaiting ESP32'}</span>
+            <span className="font-mono opacity-60 text-[10px] border-l border-current/20 pl-2">
+              {deviceId}
             </span>
           </div>
 
-          {/* Auto AI Mode */}
+          {/* AI Mode Button */}
           <button
             onClick={onToggleAutoAi}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
               autoAiEnabled
-                ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                : 'bg-slate-900 border-slate-800 text-slate-400'
+                ? 'bg-teal-500/15 border-teal-500/40 text-teal-300 shadow-sm shadow-teal-900/30'
+                : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>AI Autonomous: {autoAiEnabled ? 'ON' : 'OFF'}</span>
+            <span>Auto AI: {autoAiEnabled ? 'Active' : 'Standby'}</span>
           </button>
 
           {/* Settings */}
           <button
             onClick={onOpenSettings}
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
-            title="Firebase Database Settings"
+            className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-100 transition"
+            title="Firebase RTDB Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <nav className="flex flex-wrap gap-2 text-xs">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${
-            activeTab === 'all'
-              ? 'bg-slate-800 text-white font-bold border border-slate-700'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          All Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('telemetry')}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${
-            activeTab === 'telemetry'
-              ? 'bg-slate-800 text-white font-bold border border-slate-700'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          1. Live Telemetry
-        </button>
-        <button
-          onClick={() => setActiveTab('config')}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${
-            activeTab === 'config'
-              ? 'bg-slate-800 text-white font-bold border border-slate-700'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          2. Device Configuration Form
-        </button>
-        <button
-          onClick={() => setActiveTab('simulator')}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${
-            activeTab === 'simulator'
-              ? 'bg-slate-800 text-white font-bold border border-slate-700'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          3. Scenario Simulation
-        </button>
-        <button
-          onClick={() => setActiveTab('ai')}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${
-            activeTab === 'ai'
-              ? 'bg-slate-800 text-white font-bold border border-slate-700'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-          }`}
-        >
-          4. AI Decision Logs & Justification
-        </button>
-      </nav>
+      {/* Segmented Tab Navigation */}
+      <div className="flex items-center gap-1.5 p-1 bg-[#0e1320] border border-slate-800/80 rounded-xl overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                isActive
+                  ? 'bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+              }`}
+            >
+              <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </header>
   );
 };

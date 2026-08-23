@@ -22,7 +22,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isSendingCommand, setIsSendingCommand] = useState<boolean>(false);
   const [currentRisk, setCurrentRisk] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'all' | 'telemetry' | 'config' | 'simulator' | 'ai'>('all');
+  const [activeTab, setActiveTab] = useState<'overview' | 'telemetry' | 'config' | 'simulator' | 'ai'>('overview');
   const [currentWeather, setCurrentWeather] = useState<string>('Sunny');
   const [currentConfidence, setCurrentConfidence] = useState<number>(0.85);
 
@@ -49,7 +49,7 @@ export default function App() {
         };
         setChartHistory((prev) => [...prev.slice(-20), newPoint]);
 
-        // Track voltage history
+        // Track voltage history for dV/dt
         batteryHistoryRef.current.push({
           timestamp: Math.floor(Date.now() / 1000),
           voltage: data.battery.voltage
@@ -58,7 +58,7 @@ export default function App() {
           batteryHistoryRef.current.shift();
         }
 
-        // Run AI Microgrid Evaluation
+        // Evaluate Microgrid Health
         const opt = evaluateMicrogrid(data, loadConfigs, batteryHistoryRef.current);
         setCurrentRisk(opt.failureRiskPercent);
         setCurrentWeather(opt.weather);
@@ -107,7 +107,7 @@ export default function App() {
     { id: 'RLY-003', gpioPin: 27, physicalState: 'OFF' }
   ];
 
-  // 2. Manual Toggle
+  // Manual Toggle
   const handleToggleLoad = async (id: 'RLY-001' | 'RLY-002' | 'RLY-003', action: 'ON' | 'OFF') => {
     setIsSendingCommand(true);
     try {
@@ -123,13 +123,13 @@ export default function App() {
     }
   };
 
-  // 3. Save Configs
+  // Save Configs
   const handleSaveConfigs = async (newConfigs: Record<string, LoadConfig>) => {
     setLoadConfigs(newConfigs);
     await microgridService.saveLoadConfigs(newConfigs, DEFAULT_DEVICE_ID);
   };
 
-  // 4. Scenario Simulation
+  // Scenario Simulation
   const handleRunSimulation = (simTelemetry: TelemetryData): OptimizationResult => {
     return evaluateMicrogrid(simTelemetry, loadConfigs, batteryHistoryRef.current);
   };
@@ -143,7 +143,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 font-sans selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen text-slate-100 p-4 sm:p-6 lg:p-8 font-sans selection:bg-emerald-500 selection:text-black">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <Header
@@ -156,8 +156,38 @@ export default function App() {
           setActiveTab={setActiveTab}
         />
 
-        {/* SECTION 1: Live Telemetry View */}
-        {(activeTab === 'all' || activeTab === 'telemetry') && (
+        {/* 1. OVERVIEW TAB */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <TelemetryGauges
+              telemetry={telemetry}
+              failureRisk={currentRisk}
+              isConnected={isConnected}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PowerChart data={chartHistory} />
+              <DecisionLog
+                logs={logs}
+                weatherForecast={currentWeather}
+                confidence={currentConfidence}
+                failureRisk={currentRisk}
+              />
+            </div>
+
+            <LoadControlPanel
+              loads={currentLoads}
+              configs={loadConfigs}
+              onToggleLoad={handleToggleLoad}
+              onSaveConfigs={handleSaveConfigs}
+              isSendingCommand={isSendingCommand}
+              isConnected={isConnected}
+            />
+          </div>
+        )}
+
+        {/* 2. TELEMETRY TAB */}
+        {activeTab === 'telemetry' && (
           <div className="space-y-6">
             <TelemetryGauges
               telemetry={telemetry}
@@ -168,45 +198,51 @@ export default function App() {
           </div>
         )}
 
-        {/* SECTION 2: Device Configuration Form */}
-        {(activeTab === 'all' || activeTab === 'config') && (
-          <LoadControlPanel
-            loads={currentLoads}
-            configs={loadConfigs}
-            onToggleLoad={handleToggleLoad}
-            onSaveConfigs={handleSaveConfigs}
-            isSendingCommand={isSendingCommand}
-            isConnected={isConnected}
-          />
+        {/* 3. LOAD CONFIG TAB */}
+        {activeTab === 'config' && (
+          <div className="space-y-6">
+            <LoadControlPanel
+              loads={currentLoads}
+              configs={loadConfigs}
+              onToggleLoad={handleToggleLoad}
+              onSaveConfigs={handleSaveConfigs}
+              isSendingCommand={isSendingCommand}
+              isConnected={isConnected}
+            />
+          </div>
         )}
 
-        {/* SECTION 3: Scenario Simulation Form */}
-        {(activeTab === 'all' || activeTab === 'simulator') && (
-          <ScenarioSimulator
-            onRunSimulation={handleRunSimulation}
-            onApplyToHardware={handleApplySimToHardware}
-            isConnected={isConnected}
-          />
+        {/* 4. SCENARIO SIMULATOR TAB */}
+        {activeTab === 'simulator' && (
+          <div className="space-y-6">
+            <ScenarioSimulator
+              onRunSimulation={handleRunSimulation}
+              onApplyToHardware={handleApplySimToHardware}
+              isConnected={isConnected}
+            />
+          </div>
         )}
 
-        {/* SECTION 4: AI Justification Engine & Decision Log */}
-        {(activeTab === 'all' || activeTab === 'ai') && (
-          <DecisionLog
-            logs={logs}
-            weatherForecast={currentWeather}
-            confidence={currentConfidence}
-            failureRisk={currentRisk}
-          />
+        {/* 5. AI LOGS TAB */}
+        {activeTab === 'ai' && (
+          <div className="space-y-6">
+            <DecisionLog
+              logs={logs}
+              weatherForecast={currentWeather}
+              confidence={currentConfidence}
+              failureRisk={currentRisk}
+            />
+          </div>
         )}
 
         {/* Footer */}
-        <footer className="pt-6 border-t border-slate-800 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <span>Smart India Hackathon 2026 • Predictive Microgrid OS</span>
+        <footer className="pt-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
+          <span>Smart India Hackathon 2026 • Predictive Renewable Energy Microgrid Controller</span>
           <span className="font-mono text-emerald-400">sih.synthrobotics.dev</span>
         </footer>
       </div>
 
-      {/* Settings Dialog */}
+      {/* Settings Modal */}
       <FirebaseSetupModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );

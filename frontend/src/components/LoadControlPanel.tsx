@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Power, Edit3, Save, HeartPulse, Lightbulb, Droplets, Check } from 'lucide-react';
+import { Power, Edit3, Save, HeartPulse, Lightbulb, Droplets, Check, X } from 'lucide-react';
 import type { LoadState, LoadConfig, PriorityLevel } from '../types';
 
 interface LoadControlPanelProps {
@@ -26,14 +26,14 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
   const getPriorityBadge = (priority: PriorityLevel) => {
     switch (priority) {
       case 'CRITICAL':
-        return 'bg-rose-500/20 text-rose-300 border border-rose-500/40';
+        return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
       case 'HIGH':
-        return 'bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
       case 'MEDIUM':
-        return 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40';
+        return 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30';
       case 'LOW':
       default:
-        return 'bg-blue-500/20 text-blue-300 border border-blue-500/40';
+        return 'bg-blue-500/15 text-blue-300 border-blue-500/30';
     }
   };
 
@@ -59,22 +59,22 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
     await onSaveConfigs(tempConfigs);
     setEditingId(null);
     setSavedSuccess(id);
-    setTimeout(() => setSavedSuccess(null), 2000);
+    setTimeout(() => setSavedSuccess(null), 2500);
   };
 
   return (
-    <section className="space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            2. Device Configuration & Actuator Form
+          <h2 className="text-sm font-bold text-white tracking-tight">
+            Actuator Matrix & Dynamic Load Configuration
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Dynamically configure hardware labels, power ratings, and AI load-shedding criticality levels
+          <p className="text-xs text-slate-400">
+            Physical edge actuators with runtime prioritization for autonomous load-shedding
           </p>
         </div>
-        <span className="text-[11px] font-mono text-slate-500">
-          3 Physical Edge Actuators (GPIO 26, 25, 27)
+        <span className="text-xs font-mono text-slate-500">
+          3 Physical Channels (GPIO 26, 25, 27)
         </span>
       </div>
 
@@ -95,23 +95,28 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
           return (
             <div
               key={load.id}
-              className={`p-5 rounded-xl border transition-all ${
+              className={`p-5 rounded-2xl bg-[#0e1320] border transition-all shadow-lg ${
                 isOn && isConnected
-                  ? 'bg-slate-900 border-emerald-500/40 shadow-md'
-                  : 'bg-slate-900/80 border-slate-800'
+                  ? 'border-emerald-500/40 shadow-emerald-500/5'
+                  : 'border-slate-800/80'
               }`}
             >
               {/* Header */}
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
                     {getLoadIcon(cfg.priority)}
                   </div>
                   <div>
-                    <span className="font-mono text-xs font-bold text-white">
-                      {load.id}
-                    </span>
-                    <span className="block text-[10px] text-slate-500 font-mono">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-white">
+                        {load.id}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase ${getPriorityBadge(cfg.priority)}`}>
+                        {cfg.priority}
+                      </span>
+                    </div>
+                    <span className="block text-[11px] text-slate-500 font-mono mt-0.5">
                       GPIO {load.gpioPin} {load.id === 'RLY-001' ? '(Active-LOW MOSFET)' : '(Active-HIGH Relay)'}
                     </span>
                   </div>
@@ -119,18 +124,18 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
 
                 <button
                   onClick={() => (isEditing ? setEditingId(null) : handleStartEdit(load.id))}
-                  className="p-1.5 rounded bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs transition"
-                  title="Edit Configuration"
+                  className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 text-xs transition"
+                  title="Configure Label & Priority"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  {isEditing ? <X className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
                 </button>
               </div>
 
-              {/* Dynamic Edit Form or View */}
+              {/* Editing Form */}
               {isEditing ? (
-                <div className="mt-4 space-y-3 pt-3 border-t border-slate-800 text-xs">
+                <div className="space-y-3 pt-3 border-t border-slate-800 text-xs">
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Attached Appliance / Load Name</label>
+                    <label className="text-[10px] text-slate-400 block mb-1">Attached Appliance Label</label>
                     <input
                       type="text"
                       value={tempConfigs[load.id]?.name || ''}
@@ -140,8 +145,8 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                           [load.id]: { ...tempConfigs[load.id], name: e.target.value }
                         })
                       }
-                      className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs font-medium"
-                      placeholder="e.g., Hospital Ventilator"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs font-medium"
+                      placeholder="e.g. Hospital Ventilator"
                     />
                   </div>
 
@@ -159,7 +164,7 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                             }
                           })
                         }
-                        className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs font-bold"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs font-bold"
                       >
                         <option value="CRITICAL">CRITICAL (Preserve)</option>
                         <option value="MEDIUM">MEDIUM (Shed 2nd)</option>
@@ -167,7 +172,7 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 block mb-1">Load Power (Watts)</label>
+                      <label className="text-[10px] text-slate-400 block mb-1">Load Rating (Watts)</label>
                       <input
                         type="number"
                         step="0.05"
@@ -181,76 +186,62 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                             }
                           })
                         }
-                        className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white text-xs font-mono"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white text-xs font-mono"
                       />
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={() => handleSaveItem(load.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition"
-                    >
-                      <Save className="w-3.5 h-3.5" />
-                      Save Configuration
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="px-3 py-1.5 rounded bg-slate-800 text-slate-300 text-xs hover:bg-slate-700"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleSaveItem(load.id)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition mt-2"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    Save Changes to Firebase
+                  </button>
                 </div>
               ) : (
-                <div className="mt-4 pt-3 border-t border-slate-800/80">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-bold text-white truncate">{cfg.name}</h3>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${getPriorityBadge(cfg.priority)}`}>
-                      {cfg.priority}
-                    </span>
+                <div className="space-y-2 py-2">
+                  <h3 className="text-sm font-bold text-white truncate">{cfg.name}</h3>
+                  <div className="flex justify-between items-center text-xs text-slate-400">
+                    <span>Power Consumption:</span>
+                    <span className="font-mono text-slate-200 font-semibold">{cfg.nominalWatts} W</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Nominal Rating: <span className="font-mono text-slate-200">{cfg.nominalWatts} W</span>
-                  </p>
                   {savedSuccess === load.id && (
-                    <span className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
+                    <span className="text-[11px] text-emerald-400 flex items-center gap-1">
                       <Check className="w-3 h-3" /> Saved to Firebase
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Physical Actuator Status & Toggle */}
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-mono">
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isOn && isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'
-                    }`}
-                  />
-                  <span className={isOn && isConnected ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
-                    {isConnected ? (isOn ? 'ENERGIZED' : 'OFF / SHED') : 'STATE UNKNOWN'}
+              {/* Physical Toggle Button */}
+              <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-mono">
+                  <span className={`w-2 h-2 rounded-full ${
+                    isOn && isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'
+                  }`} />
+                  <span className={isOn && isConnected ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                    {isConnected ? (isOn ? 'ENERGIZED' : 'SHED / OFF') : 'STANDBY'}
                   </span>
                 </div>
 
                 <button
                   onClick={() => onToggleLoad(load.id, isOn ? 'OFF' : 'ON')}
                   disabled={isSendingCommand}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition ${
                     isOn
-                      ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30'
-                      : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'
+                      ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30'
+                      : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30'
                   } disabled:opacity-50`}
                 >
                   <Power className="w-3.5 h-3.5" />
-                  <span>{isOn ? 'FORCE OFF' : 'FORCE ON'}</span>
+                  <span>{isOn ? 'TURN OFF' : 'TURN ON'}</span>
                 </button>
               </div>
             </div>
           );
         })}
       </div>
-    </section>
+    </div>
   );
 };
