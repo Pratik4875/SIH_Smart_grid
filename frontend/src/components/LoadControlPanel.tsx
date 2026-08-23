@@ -61,7 +61,8 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({ loads, confi
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
       {activeLoads.map((load, index) => {
-        const config = configs[load.id] || {
+        const config: LoadConfig = configs[load.id] || {
+          id: load.id,
           name: `Unknown Load (${load.id})`,
           priority: 'LOW',
           nominalWatts: 0,
