@@ -1,153 +1,117 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
 import type { PageTab } from './components/Header';
 import { PowerFlowDiagram } from './components/PowerFlowDiagram';
 import { TelemetryGauges } from './components/TelemetryGauges';
-import { PowerChart } from './components/PowerChart';
-import type { ChartDataPoint } from './components/PowerChart';
 import { LoadControlPanel } from './components/LoadControlPanel';
-import { ScenarioSimulator } from './components/ScenarioSimulator';
-import { DecisionLog } from './components/DecisionLog';
+import { GridBotChat } from './components/GridBotChat';
+import { LandingPage } from './components/LandingPage';
 import { FirebaseSetupModal } from './components/FirebaseSetupModal';
-import { microgridService, DEFAULT_DEVICE_ID } from './firebase';
-import { evaluateMicrogrid, defaultLoadConfigs } from './utils/aiEngine';
-import type { OptimizationResult } from './utils/aiEngine';
-import type { TelemetryData, LoadConfig, AIJustificationLog, LoadState } from './types';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { setLoadState, updateDeviceConfig } from './utils/hardwareControl';
+import { getDatabase, ref, onValue } from 'firebase/database';
+import { DEFAULT_DEVICE_ID } from './firebase';
+import type { TelemetryData, LoadConfig, AIJustificationLog } from './types';
 
-export default function App() {
+const AppContent: React.FC = () => {
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  
+  const [activeTab, setActiveTab] = useState<PageTab>('command');
+  const [isConnected, setIsConnected] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [autoAiEnabled, setAutoAiEnabled] = useState(false);
+  
   const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
-  const [logs, setLogs] = useState<AIJustificationLog[]>([]);
-  const [loadConfigs, setLoadConfigs] = useState<Record<string, LoadConfig>>(defaultLoadConfigs);
-  const [chartHistory, setChartHistory] = useState<ChartDataPoint[]>([]);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [autoAiEnabled, setAutoAiEnabled] = useState<boolean>(true);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [isSendingCommand, setIsSendingCommand] = useState<boolean>(false);
-  const [currentRisk, setCurrentRisk] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<PageTab>('flow');
-  const [currentWeather, setCurrentWeather] = useState<string>('Sunny');
-  const [currentConfidence, setCurrentConfidence] = useState<number>(0.85);
+  const [aiLogs] = useState<AIJustificationLog[]>([]);
+  const [failureRisk] = useState<number>(0);
+  
+  // Dummy data for battery history since we don't have a DB store for it yet in frontend
+  const batteryHistory = [{ timestamp: Date.now(), voltage: 3.7 }];
 
-  const batteryHistoryRef = useRef<{ timestamp: number; voltage: number }[]>([]);
-  const lastActionTimeRef = useRef<number>(0);
+  const [loadConfigs, setLoadConfigs] = useState<Record<string, LoadConfig>>({
+    'RLY-001': { id: 'RLY-001', name: 'Hospital ICU / Ventilator', priority: 'CRITICAL', nominalWatts: 0.25, description: 'Pin 26', icon: 'hospital' },
+    'RLY-002': { id: 'RLY-002', name: 'Emergency Streetlights', priority: 'MEDIUM', nominalWatts: 0.15, description: 'Pin 25', icon: 'lightbulb' },
+    'RLY-003': { id: 'RLY-003', name: 'Agricultural Water Pump', priority: 'LOW', nominalWatts: 0.20, description: 'Pin 27', icon: 'droplet' }
+  });
 
-  // 1. Realtime Database Subscription
   useEffect(() => {
-    // Telemetry Stream
-    const unsubTelemetry = microgridService.subscribeTelemetry(DEFAULT_DEVICE_ID, (data) => {
-      if (data) {
-        setTelemetry(data);
-        setIsConnected(true);
-
-        // Update Power Chart
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const newPoint: ChartDataPoint = {
-          time: timeStr,
-          batteryV: Number(data.battery.voltage.toFixed(2)),
-          solarV: Number(data.solar.voltage.toFixed(2)),
-          powerW: Number(data.solar.estimatedPower.toFixed(2)),
-          temp: Number(data.environment.temperature.toFixed(1))
-        };
-        setChartHistory((prev) => [...prev.slice(-25), newPoint]);
-
-        // Track voltage history for dV/dt
-        batteryHistoryRef.current.push({
-          timestamp: Math.floor(Date.now() / 1000),
-          voltage: data.battery.voltage
-        });
-        if (batteryHistoryRef.current.length > 20) {
-          batteryHistoryRef.current.shift();
-        }
-
-        // Run AI Microgrid Evaluation
-        const opt = evaluateMicrogrid(data, loadConfigs, batteryHistoryRef.current);
-        setCurrentRisk(opt.failureRiskPercent);
-        setCurrentWeather(opt.weather);
-        setCurrentConfidence(opt.confidence);
-
-        // Autonomous Load Shedding
-        const nowSec = Math.floor(Date.now() / 1000);
-        if (
-          autoAiEnabled &&
-          opt.commandsToDispatch.length > 0 &&
-          nowSec - lastActionTimeRef.current > 8
-        ) {
-          lastActionTimeRef.current = nowSec;
-          opt.commandsToDispatch.forEach((cmd) => {
-            microgridService.sendCommand(cmd.target, cmd.action, DEFAULT_DEVICE_ID);
-          });
-          microgridService.logDecision(opt.justificationLog, DEFAULT_DEVICE_ID);
-        }
-      } else {
-        setIsConnected(false);
-      }
-    });
-
-    // Decision Logs Stream
-    const unsubLogs = microgridService.subscribeDecisionLogs(DEFAULT_DEVICE_ID, (fetchedLogs) => {
-      setLogs(fetchedLogs);
-    });
-
-    // Load Configs
-    microgridService.getLoadConfigs(DEFAULT_DEVICE_ID).then((saved) => {
-      if (saved) {
-        setLoadConfigs((prev) => ({ ...prev, ...saved }));
-      }
-    });
-
-    return () => {
-      unsubTelemetry();
-      unsubLogs();
-    };
-  }, [autoAiEnabled, loadConfigs]);
-
-  // Default loads layout matching ESP32 firmware
-  const currentLoads: LoadState[] = telemetry?.loads || [
-    { id: 'RLY-001', gpioPin: 26, physicalState: 'OFF' },
-    { id: 'RLY-002', gpioPin: 25, physicalState: 'OFF' },
-    { id: 'RLY-003', gpioPin: 27, physicalState: 'OFF' }
-  ];
-
-  // Manual Toggle
-  const handleToggleLoad = async (id: 'RLY-001' | 'RLY-002' | 'RLY-003', action: 'ON' | 'OFF') => {
-    setIsSendingCommand(true);
+    if (!user) return;
+    
+    // Connect to RTDB for live telemetry
+    let unsubscribeTelemetry = () => {};
+    let unsubscribeConfigs = () => {};
     try {
-      await microgridService.sendCommand(id, action, DEFAULT_DEVICE_ID);
-      if (telemetry) {
-        setTelemetry({
-          ...telemetry,
-          loads: telemetry.loads.map((l) => (l.id === id ? { ...l, physicalState: action } : l))
-        });
-      }
-    } finally {
-      setIsSendingCommand(false);
+      const db = getDatabase();
+      const telemetryRef = ref(db, `devices/${DEFAULT_DEVICE_ID}/telemetry`);
+      const configRef = ref(db, `devices/${DEFAULT_DEVICE_ID}/config/loads`);
+      
+      const unsubT = onValue(telemetryRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setIsConnected(true);
+          setTelemetry(snapshot.val());
+        }
+      });
+      
+      const unsubC = onValue(configRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setLoadConfigs(snapshot.val());
+        }
+      });
+      
+      unsubscribeTelemetry = unsubT;
+      unsubscribeConfigs = unsubC;
+    } catch (e) {
+      console.warn("RTDB Connection failed", e);
     }
+    
+    return () => {
+      unsubscribeTelemetry();
+      unsubscribeConfigs();
+    };
+  }, [user]);
+
+  const handleToggleLoad = async (id: 'RLY-001' | 'RLY-002' | 'RLY-003', action: 'ON' | 'OFF') => {
+    await setLoadState(id, action);
   };
 
-  // Save Configs
-  const handleSaveConfigs = async (newConfigs: Record<string, LoadConfig>) => {
-    setLoadConfigs(newConfigs);
-    await microgridService.saveLoadConfigs(newConfigs, DEFAULT_DEVICE_ID);
-  };
-
-  // Scenario Simulation
-  const handleRunSimulation = (simTelemetry: TelemetryData): OptimizationResult => {
-    return evaluateMicrogrid(simTelemetry, loadConfigs, batteryHistoryRef.current);
-  };
-
-  const handleApplySimToHardware = async (
-    commands: { target: 'RLY-001' | 'RLY-002' | 'RLY-003'; action: 'ON' | 'OFF' }[]
-  ) => {
+  const handleApplySimToHardware = async (commands: { target: 'RLY-001' | 'RLY-002' | 'RLY-003'; action: 'ON' | 'OFF' }[]) => {
     for (const cmd of commands) {
-      await microgridService.sendCommand(cmd.target, cmd.action, DEFAULT_DEVICE_ID);
+      await handleToggleLoad(cmd.target, cmd.action);
     }
   };
+
+  // Auth Gate
+  if (!user) {
+    return <LandingPage />;
+  }
 
   return (
-    <div className="min-h-screen text-slate-100 p-4 sm:p-6 lg:p-8 font-sans selection:bg-emerald-500 selection:text-black">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header with Navigation */}
+    <motion.div 
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+      style={{ minHeight: '100vh', background: colors.bg, color: colors.text, padding: 'clamp(12px, 3vw, 24px)', fontFamily: "'Inter', system-ui, sans-serif", position: 'relative', overflowX: 'hidden' } as React.CSSProperties}
+    >
+      {/* Cyberpunk Grid Background */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(${colors.border} 1px, transparent 1px), linear-gradient(90deg, ${colors.border} 1px, transparent 1px)`, backgroundSize: '50px 50px', opacity: 0.3, zIndex: 0, pointerEvents: 'none', transform: 'perspective(1000px) rotateX(60deg) scale(2.5) translateY(-20%)', transformOrigin: 'top' }} />
+
+      {/* GenZ Animated Mesh Gradient Background */}
+      <div style={{ position: 'absolute', top: '-50%', left: '-20%', width: '140%', height: '140%', background: `radial-gradient(circle at 50% 50%, ${colors.accentBg} 0%, transparent 60%)`, filter: 'blur(100px)', opacity: 0.8, pointerEvents: 'none', animation: 'spin 20s linear infinite', zIndex: 0 }} />
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }`}</style>
+
+      {/* Left/Right Decorative HUD Elements */}
+      <div style={{ position: 'absolute', left: '20px', top: '100px', bottom: '20px', width: '20px', borderLeft: `1px solid ${colors.borderAccent}`, opacity: 0.5, zIndex: 0, pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ width: '4px', height: '40px', background: colors.accent, marginLeft: '-2.5px', boxShadow: `0 0 10px ${colors.accentGlow}` }} />
+        <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '10px', color: colors.accent, letterSpacing: '0.2em', fontFamily: 'monospace' }}>SYS_NOMINAL</div>
+      </div>
+      <div style={{ position: 'absolute', right: '20px', top: '100px', bottom: '20px', width: '20px', borderRight: `1px solid ${colors.borderAccent}`, opacity: 0.5, zIndex: 0, pointerEvents: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div style={{ width: '4px', height: '100px', background: '#ec4899', marginRight: '-2.5px', boxShadow: '0 0 10px rgba(236,72,153,0.5)' }} />
+        <div style={{ writingMode: 'vertical-rl', fontSize: '10px', color: '#ec4899', letterSpacing: '0.2em', fontFamily: 'monospace' }}>NET_SECURE</div>
+      </div>
+
+      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column' as const, gap: '20px', width: '100%', position: 'relative', zIndex: 1 }}>
+        
         <Header
           isConnected={isConnected}
           deviceId={DEFAULT_DEVICE_ID}
@@ -158,77 +122,68 @@ export default function App() {
           setActiveTab={setActiveTab}
         />
 
-        {/* PAGE 1: POWER GRID TOPOLOGY */}
-        {activeTab === 'flow' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <PowerFlowDiagram
-              telemetry={telemetry}
-              configs={loadConfigs}
-              failureRisk={currentRisk}
-              isConnected={isConnected}
-              onToggleLoad={handleToggleLoad}
-            />
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {activeTab === 'command' && (
+            <motion.div key="command" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+              <PowerFlowDiagram
+                telemetry={telemetry}
+                configs={loadConfigs}
+                failureRisk={failureRisk}
+                isConnected={isConnected}
+                onToggleLoad={handleToggleLoad}
+              />
+            </motion.div>
+          )}
 
-        {/* PAGE 2: LIVE TELEMETRY & POWER CURVES */}
-        {activeTab === 'telemetry' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <TelemetryGauges
-              telemetry={telemetry}
-              failureRisk={currentRisk}
-              isConnected={isConnected}
-            />
-            <PowerChart data={chartHistory} />
-          </div>
-        )}
+          {activeTab === 'telemetry' && (
+            <motion.div key="telemetry" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+              <TelemetryGauges telemetry={telemetry} failureRisk={failureRisk} isConnected={isConnected} />
+            </motion.div>
+          )}
 
-        {/* PAGE 3: SMART ACTUATOR MATRIX & LOADS */}
-        {activeTab === 'loads' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <LoadControlPanel
-              loads={currentLoads}
-              configs={loadConfigs}
-              onToggleLoad={handleToggleLoad}
-              onSaveConfigs={handleSaveConfigs}
-              isSendingCommand={isSendingCommand}
-              isConnected={isConnected}
-            />
-          </div>
-        )}
+          {activeTab === 'loads' && (
+            <motion.div key="loads" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+              <LoadControlPanel
+                loads={telemetry?.loads || []}
+                configs={loadConfigs}
+                isConnected={isConnected}
+                onToggleLoad={handleToggleLoad}
+                onUpdateConfig={updateDeviceConfig}
+              />
+            </motion.div>
+          )}
 
-        {/* PAGE 4: EXPLAINABLE AI & DECISION AUDIT */}
-        {activeTab === 'ai' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <DecisionLog
-              logs={logs}
-              weatherForecast={currentWeather}
-              confidence={currentConfidence}
-              failureRisk={currentRisk}
-            />
-          </div>
-        )}
+          {activeTab === 'gridbot' && (
+            <motion.div key="gridbot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+              <GridBotChat
+                logs={aiLogs}
+                loadConfigs={loadConfigs}
+                batteryHistory={batteryHistory}
+                telemetry={telemetry}
+                isConnected={isConnected}
+                onApplyToHardware={handleApplySimToHardware}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* PAGE 5: SCENARIO STRESS TEST BENCH */}
-        {activeTab === 'simulator' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <ScenarioSimulator
-              onRunSimulation={handleRunSimulation}
-              onApplyToHardware={handleApplySimToHardware}
-              isConnected={isConnected}
-            />
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer className="pt-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <footer style={{ paddingTop: '20px', borderTop: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: colors.textMuted }}>
           <span>Smart India Hackathon 2026 • Predictive Renewable Energy Microgrid Controller</span>
-          <span className="font-mono text-emerald-400">sih.synthrobotics.dev</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: colors.accent }}>sih.synthrobotics.dev</span>
         </footer>
       </div>
 
-      {/* Settings Modal */}
       <FirebaseSetupModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-    </div>
+    </motion.div>
+  );
+};
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -86,17 +86,19 @@ static bool loadStates[3] = {false, false, false}; // P1, P2, P3 (Internal statu
 // 3. LOAD CONTROL FUNCTIONS
 // ==========================================================
 void setupControl() {
-  // All 3 Load channels are Active LOW (HIGH = OFF at boot, LOW = ON)
+  // P1: Active LOW MOSFET (HIGH = OFF at boot)
   pinMode(PIN_LOAD_1, OUTPUT);
-  digitalWrite(PIN_LOAD_1, HIGH); // OFF
+  digitalWrite(PIN_LOAD_1, HIGH);
   loadStates[0] = false;
 
+  // P2: Active HIGH Relay (LOW = OFF at boot)
   pinMode(PIN_LOAD_2, OUTPUT);
-  digitalWrite(PIN_LOAD_2, HIGH); // OFF
+  digitalWrite(PIN_LOAD_2, LOW);
   loadStates[1] = false;
 
+  // P3: Active HIGH Relay (LOW = OFF at boot)
   pinMode(PIN_LOAD_3, OUTPUT);
-  digitalWrite(PIN_LOAD_3, HIGH); // OFF
+  digitalWrite(PIN_LOAD_3, LOW);
   loadStates[2] = false;
 }
 
@@ -105,16 +107,18 @@ void setLoadState(int loadIndex, bool state) {
     return;
   loadStates[loadIndex] = state;
 
-  // Active LOW logic for all actuators (LOW = ON, HIGH = OFF)
   switch (loadIndex) {
   case 0:
+    // MOSFET is active LOW (LOW = ON, HIGH = OFF)
     digitalWrite(PIN_LOAD_1, state ? LOW : HIGH);
     break;
   case 1:
-    digitalWrite(PIN_LOAD_2, state ? LOW : HIGH);
+    // Relay 1 is active HIGH (HIGH = ON, LOW = OFF)
+    digitalWrite(PIN_LOAD_2, state ? HIGH : LOW);
     break;
   case 2:
-    digitalWrite(PIN_LOAD_3, state ? LOW : HIGH);
+    // Relay 2 is active HIGH (HIGH = ON, LOW = OFF)
+    digitalWrite(PIN_LOAD_3, state ? HIGH : LOW);
     break;
   }
 }

@@ -1,7 +1,10 @@
 import React from 'react';
-import { Zap, Settings, Cpu, Activity, Sliders, Brain, GitFork } from 'lucide-react';
+import { Zap, Settings, Cpu, Activity, Sliders, Bot, Moon, SunMedium, LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
-export type PageTab = 'flow' | 'telemetry' | 'loads' | 'ai' | 'simulator';
+export type PageTab = 'command' | 'telemetry' | 'loads' | 'gridbot';
 
 interface HeaderProps {
   isConnected: boolean;
@@ -22,98 +25,153 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab
 }) => {
-  const pages: { id: PageTab; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'flow', label: '1. Power Grid Topology', icon: GitFork },
-    { id: 'telemetry', label: '2. Live Telemetry & Curves', icon: Activity },
-    { id: 'loads', label: '3. Actuator Matrix & Loads', icon: Sliders },
-    { id: 'ai', label: '4. AI Decisions & Audit Log', icon: Brain },
-    { id: 'simulator', label: '5. Scenario Stress Simulator', icon: Zap }
+  const { colors, theme, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
+
+  const pages: { id: PageTab; label: string; emoji: string; icon: React.FC<{ style?: React.CSSProperties }> }[] = [
+    { id: 'command', label: 'Command Center', emoji: '⚡', icon: Zap },
+    { id: 'telemetry', label: 'Live Grid', emoji: '📊', icon: Activity },
+    { id: 'loads', label: 'Relay Control', emoji: '🎮', icon: Sliders },
+    { id: 'gridbot', label: 'GridBot AI', emoji: '🤖', icon: Bot },
   ];
 
   return (
-    <header className="space-y-4 pb-2 border-b border-slate-800/80">
-      {/* Top Navbar */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+    <header style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '12px', borderBottom: `1px solid ${colors.border}` }}>
+      {/* Top Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         {/* Brand */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/20">
-            <div className="w-full h-full bg-[#0b0f19] rounded-[10px] flex items-center justify-center">
-              <Zap className="w-5 h-5 text-emerald-400 fill-emerald-400/20" />
+        {/* GenZ Cyberpunk Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ 
+            width: '44px', height: '44px', borderRadius: '14px', 
+            background: `linear-gradient(135deg, ${colors.accent}, #ec4899)`, 
+            padding: '2px', 
+            boxShadow: `0 0 20px ${colors.accentGlow}`,
+            animation: 'pulse 2s infinite'
+          }}>
+            <div style={{ width: '100%', height: '100%', background: colors.bgCard, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Zap style={{ width: '22px', height: '22px', color: colors.accent }} />
             </div>
           </div>
+
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-lg font-bold text-white tracking-tight">
-                SolarGrid Microgrid Controller
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '16px', fontWeight: 700, color: colors.text, letterSpacing: '-0.02em', margin: 0 }}>
+                SolarGrid
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">
+              <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, background: colors.accentBg, border: `1px solid ${colors.borderAccent}`, color: colors.accent, fontFamily: "'JetBrains Mono', monospace" }}>
                 SIH 2026
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Autonomous Renewable Energy Management • Edge Node: <span className="font-mono text-emerald-400">{deviceId}</span>
+            <p style={{ fontSize: '11px', color: colors.textSecondary, margin: 0 }}>
+              Edge: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: colors.accent }}>{deviceId}</span>
             </p>
           </div>
         </div>
 
-        {/* Right Status Controls */}
-        <div className="flex items-center gap-3">
+        {/* Right Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Connection Badge */}
-          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-medium backdrop-blur-md transition-all ${
-            isConnected
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 shadow-sm shadow-emerald-500/10'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-          }`}>
-            <span className="relative flex h-2 w-2">
-              {isConnected && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              )}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-            </span>
-            <span>{isConnected ? 'ESP32 Streaming (Live)' : 'ESP32 Offline (Awaiting RTDB)'}</span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '5px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 500,
+            background: isConnected ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+            border: `1px solid ${isConnected ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'}`,
+            color: isConnected ? '#6ee7b7' : '#fda4af'
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isConnected ? '#10b981' : '#f43f5e', boxShadow: isConnected ? '0 0 6px rgba(16,185,129,0.6)' : 'none' }} />
+            <span>{isConnected ? 'Live' : 'Offline'}</span>
           </div>
 
-          {/* AI Mode Button */}
-          <button
-            onClick={onToggleAutoAi}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all ${
-              autoAiEnabled
-                ? 'bg-teal-500/15 border-teal-500/40 text-teal-300 shadow-sm shadow-teal-900/30'
-                : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Autonomous AI: {autoAiEnabled ? 'Active' : 'Manual'}</span>
+          {/* AI Toggle */}
+          <button onClick={onToggleAutoAi} style={{
+            display: 'flex', alignItems: 'center', gap: '5px',
+            padding: '5px 10px', borderRadius: '9999px', fontSize: '11px', fontWeight: 500,
+            background: autoAiEnabled ? 'rgba(20,184,166,0.12)' : colors.bgCard,
+            border: `1px solid ${autoAiEnabled ? 'rgba(20,184,166,0.35)' : colors.border}`,
+            color: autoAiEnabled ? '#5eead4' : colors.textSecondary, cursor: 'pointer'
+          }}>
+            <Cpu style={{ width: '12px', height: '12px' }} />
+            <span>AI: {autoAiEnabled ? 'Auto' : 'Manual'}</span>
+          </button>
+
+          {/* Theme Toggle */}
+          <button onClick={toggleTheme} style={{
+            padding: '7px', borderRadius: '9999px', background: colors.bgCard,
+            border: `1px solid ${colors.border}`, color: colors.textSecondary, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }} title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}>
+            {theme === 'dark' ? <SunMedium style={{ width: '14px', height: '14px' }} /> : <Moon style={{ width: '14px', height: '14px' }} />}
           </button>
 
           {/* Settings */}
-          <button
-            onClick={onOpenSettings}
-            className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-100 transition"
-            title="Firebase Realtime Database Settings"
-          >
-            <Settings className="w-4 h-4" />
+          <button onClick={onOpenSettings} style={{
+            padding: '7px', borderRadius: '9999px', background: colors.bgCard,
+            border: `1px solid ${colors.border}`, color: colors.textSecondary, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }} title="Firebase Settings">
+            <Settings style={{ width: '14px', height: '14px' }} />
           </button>
+
+          {/* User Avatar */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '4px' }}>
+              <img
+                src={user.photoURL || ''}
+                alt={user.displayName || 'User'}
+                style={{ width: '28px', height: '28px', borderRadius: '50%', border: `2px solid ${colors.borderAccent}` }}
+              />
+              <button onClick={logout} style={{
+                padding: '5px 8px', borderRadius: '8px', background: 'rgba(244,63,94,0.1)',
+                border: '1px solid rgba(244,63,94,0.2)', color: '#fda4af', cursor: 'pointer',
+                fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px'
+              }}>
+                <LogOut style={{ width: '10px', height: '10px' }} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Modern Segmented Navigation Tabs */}
-      <nav className="flex items-center gap-2 p-1.5 bg-[#0b0f19] border border-slate-800/80 rounded-2xl overflow-x-auto shadow-inner">
+      {/* Navigation Tabs */}
+      <nav style={{
+        display: 'flex', alignItems: 'center', gap: '4px',
+        padding: '4px', background: colors.bgCard,
+        border: `1px solid ${colors.border}`, borderRadius: '14px',
+        overflowX: 'auto'
+      }}>
         {pages.map((p) => {
-          const Icon = p.icon;
           const isActive = activeTab === p.id;
           return (
             <button
               key={p.id}
               onClick={() => setActiveTab(p.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
-                isActive
-                  ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-md shadow-emerald-500/5'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
-              }`}
+              style={{
+                position: 'relative', display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '9px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: isActive ? 700 : 500,
+                color: isActive ? colors.accent : colors.textSecondary,
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                whiteSpace: 'nowrap', transition: 'color 0.2s', flex: '1 1 0%', justifyContent: 'center'
+              }}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
-              <span>{p.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabBg"
+                  style={{
+                    position: 'absolute', inset: 0,
+                    background: colors.accentBg,
+                    border: `1px solid ${colors.borderAccent}`,
+                    borderRadius: '10px',
+                    boxShadow: `0 0 12px ${colors.accentGlow}`
+                  }}
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>{p.emoji}</span>
+                <span>{p.label}</span>
+              </span>
             </button>
           );
         })}

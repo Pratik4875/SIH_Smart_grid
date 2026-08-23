@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Database, Check, RefreshCw } from 'lucide-react';
+import { X, Database, Check, RefreshCw, Key, Bot } from 'lucide-react';
 import { getSavedFirebaseConfig, saveFirebaseConfig, DEFAULT_DEVICE_ID } from '../firebase';
+import { getSavedAiConfig, saveAiConfig } from '../aiConfig';
+import { useTheme } from '../context/ThemeContext';
 
 interface FirebaseSetupModalProps {
   isOpen: boolean;
@@ -8,7 +10,9 @@ interface FirebaseSetupModalProps {
 }
 
 export const FirebaseSetupModal: React.FC<FirebaseSetupModalProps> = ({ isOpen, onClose }) => {
+  const { colors } = useTheme();
   const [config, setConfig] = useState(getSavedFirebaseConfig());
+  const [aiConfig, setAiConfig] = useState(getSavedAiConfig());
   const [deviceId, setDeviceId] = useState(DEFAULT_DEVICE_ID);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -16,101 +20,104 @@ export const FirebaseSetupModal: React.FC<FirebaseSetupModalProps> = ({ isOpen, 
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    saveFirebaseConfig(config);
+    saveAiConfig(aiConfig);
+    saveFirebaseConfig(config); // This reloads the page
     setSavedSuccess(true);
     setTimeout(() => {
       onClose();
     }, 1000);
   };
 
+  const inputStyle = {
+    width: '100%', padding: '10px 14px', borderRadius: '10px',
+    background: colors.bgInput, border: `1px solid ${colors.border}`,
+    color: colors.text, fontSize: '13px', fontFamily: "'JetBrains Mono', monospace",
+    outline: 'none', transition: 'border-color 0.2s', marginTop: '4px'
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
-        >
-          <X className="w-4 h-4" />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '600px', background: colors.bgCard, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+        
+        <button onClick={onClose} style={{ position: 'absolute', top: '20px', right: '20px', padding: '6px', borderRadius: '10px', background: colors.bgInput, border: 'none', color: colors.textSecondary, cursor: 'pointer' }}>
+          <X style={{ width: '16px', height: '16px' }} />
         </button>
 
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-            <Database className="w-5 h-5" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b' }}>
+            <Database style={{ width: '20px', height: '20px' }} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Firebase Realtime DB Configuration</h3>
-            <p className="text-xs text-slate-400">Configure connection strings for the ESP32 bridge</p>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: colors.text, margin: 0 }}>System Configuration</h3>
+            <p style={{ fontSize: '12px', color: colors.textSecondary, margin: '4px 0 0 0' }}>Configure Firebase connection & AI API Keys</p>
           </div>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-3.5 text-xs">
-          <div>
-            <label className="text-slate-300 font-semibold block mb-1">Database URL (RTDB)</label>
-            <input
-              type="text"
-              value={config.databaseURL || ''}
-              onChange={(e) => setConfig({ ...config, databaseURL: e.target.value })}
-              placeholder="https://micro-grid-sih-default-rtdb.asia-southeast1.firebasedatabase.app"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-slate-300 font-semibold block mb-1">Web API Key</label>
-            <input
-              type="text"
-              value={config.apiKey || ''}
-              onChange={(e) => setConfig({ ...config, apiKey: e.target.value })}
-              placeholder="AIzaSyCDKm6jQR5gvKCpfWH70Bi6NaxOCCNMfHA"
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-slate-300 font-semibold block mb-1">Project ID</label>
-              <input
-                type="text"
-                value={config.projectId || ''}
-                onChange={(e) => setConfig({ ...config, projectId: e.target.value })}
-                placeholder="micro-grid-sih-default-rtdb"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"
-              />
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* Firebase Section */}
+          <div style={{ padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}`, background: colors.bg }}>
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: colors.textSecondary, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Database style={{ width: '14px', height: '14px' }} /> Firebase RTDB
+            </h4>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary }}>Database URL</label>
+              <input type="text" value={config.databaseURL || ''} onChange={(e) => setConfig({ ...config, databaseURL: e.target.value })} required style={inputStyle} />
             </div>
-            <div>
-              <label className="text-slate-300 font-semibold block mb-1">Device ID Target</label>
-              <input
-                type="text"
-                value={deviceId}
-                onChange={(e) => setDeviceId(e.target.value)}
-                placeholder="ESP32-MG-001"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-100 font-mono"
-              />
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary }}>Web API Key</label>
+              <input type="text" value={config.apiKey || ''} onChange={(e) => setConfig({ ...config, apiKey: e.target.value })} required style={inputStyle} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary }}>Project ID</label>
+                <input type="text" value={config.projectId || ''} onChange={(e) => setConfig({ ...config, projectId: e.target.value })} style={inputStyle} />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary }}>Device Target</label>
+                <input type="text" value={deviceId} onChange={(e) => setDeviceId(e.target.value)} style={inputStyle} />
+              </div>
             </div>
           </div>
 
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300/90 leading-relaxed">
-            <strong className="text-amber-200">Firebase Rules Note:</strong> Ensure your Realtime Database Rules allow read/write in test mode during hackathon demos:
-            <code className="block mt-1 p-1 bg-slate-950 rounded text-[10px] text-emerald-400 font-mono">
-              {'{ ".read": true, ".write": true }'}
-            </code>
+          {/* AI APIs Section */}
+          <div style={{ padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}`, background: colors.bg }}>
+            <h4 style={{ fontSize: '12px', fontWeight: 700, color: colors.textSecondary, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Bot style={{ width: '14px', height: '14px' }} /> AI Models (GridBot)
+            </h4>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary, display: 'flex', justifyContent: 'space-between' }}>
+                <span>Gemini API Key (Primary)</span>
+                <span style={{ color: colors.textMuted, fontWeight: 400 }}>Optional</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Key style={{ position: 'absolute', left: '12px', top: '16px', width: '14px', height: '14px', color: colors.textMuted }} />
+                <input type="password" value={aiConfig.geminiApiKey} onChange={(e) => setAiConfig({ ...aiConfig, geminiApiKey: e.target.value })} placeholder="AIzaSy..." style={{ ...inputStyle, paddingLeft: '36px' }} />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary, display: 'flex', justifyContent: 'space-between' }}>
+                <span>Grok API Key (Backup)</span>
+                <span style={{ color: colors.textMuted, fontWeight: 400 }}>Optional</span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Key style={{ position: 'absolute', left: '12px', top: '16px', width: '14px', height: '14px', color: colors.textMuted }} />
+                <input type="password" value={aiConfig.grokApiKey} onChange={(e) => setAiConfig({ ...aiConfig, grokApiKey: e.target.value })} placeholder="xai-..." style={{ ...inputStyle, paddingLeft: '36px' }} />
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition"
-            >
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: colors.bgInput, border: 'none', color: colors.text, fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s' }}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black transition"
-            >
-              {savedSuccess ? <Check className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+            <button type="submit" style={{ flex: 1, padding: '14px', borderRadius: '12px', background: colors.accent, color: '#000', fontWeight: 800, fontSize: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: `0 0 20px ${colors.accentGlow}`, transition: 'all 0.2s' }}>
+              {savedSuccess ? <Check style={{ width: '16px', height: '16px' }} /> : <RefreshCw style={{ width: '16px', height: '16px' }} />}
               {savedSuccess ? 'Saved! Reloading...' : 'Save & Reconnect'}
             </button>
           </div>
