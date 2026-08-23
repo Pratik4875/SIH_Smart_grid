@@ -67,14 +67,14 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
           <h2 className="text-base font-bold text-white tracking-tight">
-            Actuator Matrix & Dynamic Load Configuration
+            Actuator Matrix & Dynamic Load Prioritization
           </h2>
           <p className="text-xs text-slate-400">
-            Physical edge actuators with runtime prioritization for autonomous load-shedding
+            Configure appliance names, wattage ratings, and shedding hierarchy for all 3 edge relays
           </p>
         </div>
-        <span className="text-xs font-mono text-slate-500 bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
-          3 Physical Channels (GPIO 26, 25, 27)
+        <span className="text-xs font-mono text-slate-400 bg-[#0e1320] px-3.5 py-1.5 rounded-xl border border-slate-800">
+          3 Physical Edge Actuators (GPIO 26, 25, 27)
         </span>
       </div>
 
@@ -102,7 +102,7 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
               }`}
             >
               <div>
-                {/* Header */}
+                {/* Top Bar */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
                     <div className={`p-3 rounded-xl border ${
@@ -134,11 +134,11 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                   </button>
                 </div>
 
-                {/* Editing Form */}
+                {/* Edit Form or Normal Content */}
                 {isEditing ? (
                   <div className="space-y-3 pt-3 border-t border-slate-800 text-xs">
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Attached Appliance Name</label>
+                      <label className="text-[11px] text-slate-400 block mb-1">Appliance Label</label>
                       <input
                         type="text"
                         value={tempConfigs[load.id]?.name || ''}
@@ -175,7 +175,7 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Power Rating (W)</label>
+                        <label className="text-[11px] text-slate-400 block mb-1">Rating (Watts)</label>
                         <input
                           type="number"
                           step="0.05"
@@ -196,10 +196,10 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
 
                     <button
                       onClick={() => handleSaveItem(load.id)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition mt-2"
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition mt-2 shadow-md shadow-emerald-500/20"
                     >
                       <Save className="w-4 h-4" />
-                      Save Configuration
+                      Save Changes
                     </button>
                   </div>
                 ) : (
@@ -218,12 +218,12 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                 )}
               </div>
 
-              {/* Intuitive Sliding Power Switch */}
+              {/* Intuitive Sliding Switch */}
               <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${
-                      isOn ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'
+                      isOn ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'
                     }`} />
                     <span className={`text-xs font-mono font-bold ${
                       isOn ? 'text-emerald-400' : 'text-slate-500'
@@ -241,14 +241,14 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({
                   type="button"
                   onClick={() => onToggleLoad(load.id, isOn ? 'OFF' : 'ON')}
                   disabled={isSendingCommand}
-                  className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isOn ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-slate-800'
+                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isOn ? 'bg-emerald-500 shadow-md shadow-emerald-500/30' : 'bg-slate-800'
                   } disabled:opacity-50`}
                   title={isOn ? 'Click to Turn OFF' : 'Click to Turn ON'}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                      isOn ? 'translate-x-8' : 'translate-x-0'
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      isOn ? 'translate-x-6' : 'translate-x-0'
                     }`}
                   />
                 </button>

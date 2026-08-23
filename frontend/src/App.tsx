@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
+import type { PageTab } from './components/Header';
 import { PowerFlowDiagram } from './components/PowerFlowDiagram';
 import { TelemetryGauges } from './components/TelemetryGauges';
 import { PowerChart } from './components/PowerChart';
@@ -23,7 +24,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isSendingCommand, setIsSendingCommand] = useState<boolean>(false);
   const [currentRisk, setCurrentRisk] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'overview' | 'telemetry' | 'config' | 'simulator' | 'ai'>('overview');
+  const [activeTab, setActiveTab] = useState<PageTab>('flow');
   const [currentWeather, setCurrentWeather] = useState<string>('Sunny');
   const [currentConfidence, setCurrentConfidence] = useState<number>(0.85);
 
@@ -50,7 +51,7 @@ export default function App() {
         };
         setChartHistory((prev) => [...prev.slice(-25), newPoint]);
 
-        // Track voltage history
+        // Track voltage history for dV/dt
         batteryHistoryRef.current.push({
           timestamp: Math.floor(Date.now() / 1000),
           voltage: data.battery.voltage
@@ -146,7 +147,7 @@ export default function App() {
   return (
     <div className="min-h-screen text-slate-100 p-4 sm:p-6 lg:p-8 font-sans selection:bg-emerald-500 selection:text-black">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Header with Navigation */}
         <Header
           isConnected={isConnected}
           deviceId={DEFAULT_DEVICE_ID}
@@ -157,48 +158,20 @@ export default function App() {
           setActiveTab={setActiveTab}
         />
 
-        {/* 1. DASHBOARD OVERVIEW PAGE */}
-        {activeTab === 'overview' && (
+        {/* PAGE 1: POWER GRID TOPOLOGY */}
+        {activeTab === 'flow' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Live Interactive Power Flow Diagram */}
             <PowerFlowDiagram
               telemetry={telemetry}
               configs={loadConfigs}
               failureRisk={currentRisk}
               isConnected={isConnected}
-            />
-
-            {/* Primary KPI Gauges */}
-            <TelemetryGauges
-              telemetry={telemetry}
-              failureRisk={currentRisk}
-              isConnected={isConnected}
-            />
-
-            {/* Power Curves & AI Stream */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <PowerChart data={chartHistory} />
-              <DecisionLog
-                logs={logs}
-                weatherForecast={currentWeather}
-                confidence={currentConfidence}
-                failureRisk={currentRisk}
-              />
-            </div>
-
-            {/* Actuators with Tactile Toggle Switches */}
-            <LoadControlPanel
-              loads={currentLoads}
-              configs={loadConfigs}
               onToggleLoad={handleToggleLoad}
-              onSaveConfigs={handleSaveConfigs}
-              isSendingCommand={isSendingCommand}
-              isConnected={isConnected}
             />
           </div>
         )}
 
-        {/* 2. TELEMETRY & CURVES PAGE */}
+        {/* PAGE 2: LIVE TELEMETRY & POWER CURVES */}
         {activeTab === 'telemetry' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <TelemetryGauges
@@ -207,17 +180,11 @@ export default function App() {
               isConnected={isConnected}
             />
             <PowerChart data={chartHistory} />
-            <PowerFlowDiagram
-              telemetry={telemetry}
-              configs={loadConfigs}
-              failureRisk={currentRisk}
-              isConnected={isConnected}
-            />
           </div>
         )}
 
-        {/* 3. LOAD CONFIGURATION PAGE */}
-        {activeTab === 'config' && (
+        {/* PAGE 3: SMART ACTUATOR MATRIX & LOADS */}
+        {activeTab === 'loads' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <LoadControlPanel
               loads={currentLoads}
@@ -227,27 +194,10 @@ export default function App() {
               isSendingCommand={isSendingCommand}
               isConnected={isConnected}
             />
-            <PowerFlowDiagram
-              telemetry={telemetry}
-              configs={loadConfigs}
-              failureRisk={currentRisk}
-              isConnected={isConnected}
-            />
           </div>
         )}
 
-        {/* 4. SCENARIO SIMULATOR PAGE */}
-        {activeTab === 'simulator' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <ScenarioSimulator
-              onRunSimulation={handleRunSimulation}
-              onApplyToHardware={handleApplySimToHardware}
-              isConnected={isConnected}
-            />
-          </div>
-        )}
-
-        {/* 5. AI JUSTIFICATION LOG PAGE */}
+        {/* PAGE 4: EXPLAINABLE AI & DECISION AUDIT */}
         {activeTab === 'ai' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <DecisionLog
@@ -256,10 +206,15 @@ export default function App() {
               confidence={currentConfidence}
               failureRisk={currentRisk}
             />
-            <PowerFlowDiagram
-              telemetry={telemetry}
-              configs={loadConfigs}
-              failureRisk={currentRisk}
+          </div>
+        )}
+
+        {/* PAGE 5: SCENARIO STRESS TEST BENCH */}
+        {activeTab === 'simulator' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <ScenarioSimulator
+              onRunSimulation={handleRunSimulation}
+              onApplyToHardware={handleApplySimToHardware}
               isConnected={isConnected}
             />
           </div>
