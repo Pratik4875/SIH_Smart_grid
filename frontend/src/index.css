@@ -1,18 +1,33 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: #020617;
   color: #f8fafc;
+  min-height: 100vh;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  -webkit-font-smoothing: antialiased;
+  text-align: left;
+  border: none;
 }
 
 /* Custom Scrollbar */
@@ -31,7 +46,7 @@ body {
   background: #334155;
 }
 
-/* Custom Slider Styling */
+/* Range input */
 input[type="range"] {
   height: 6px;
   border-radius: 4px;
@@ -47,16 +62,6 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: #10b981;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-  border: 2px solid #ffffff;
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #10b981;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
   border: 2px solid #ffffff;
 }
