@@ -5,13 +5,13 @@ import type { Database } from 'firebase/database';
 import type { TelemetryData, AIJustificationLog, LoadConfig, CommandMessage, CommandAck } from './types';
 
 export const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCDKm6jQR5gvKCpfWH70Bi6NaxOCCNMfHA",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "micro-grid-sih-default-rtdb.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://micro-grid-sih-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "micro-grid-sih-default-rtdb",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "micro-grid-sih-default-rtdb.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1029384756",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1029384756:web:abcd1234efgh"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAsavz-xYJs19mKDCxowNOKmMuYuXOQDLI",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "smartpowergridrenuableenergy.firebaseapp.com",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://smartpowergridrenuableenergy-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "smartpowergridrenuableenergy",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "smartpowergridrenuableenergy.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1094066309538",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1094066309538:web:ed08b1a24f1de2ebda0afb"
 };
 
 export const DEFAULT_DEVICE_ID = "ESP32-MG-001";

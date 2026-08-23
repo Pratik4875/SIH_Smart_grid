@@ -29,8 +29,9 @@
 #define WIFI_SSID "Pratik.wifi"
 #define WIFI_PASSWORD "Pr@tik123"
 
-#define FIREBASE_API_KEY "AIzaSyCDKm6jQR5gvKCpfWH70Bi6NaxOCCNMfHA"
-#define FIREBASE_DATABASE_URL "micro-grid-sih-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_API_KEY "AIzaSyAsavz-xYJs19mKDCxowNOKmMuYuXOQDLI"
+#define FIREBASE_DATABASE_URL "smartpowergridrenuableenergy-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_DATABASE_SECRET "8oZcUeR2cCu0kzK7OwMIcvyuo78P4zvWQUXbda66"
 
 // ==========================================================
 // 1. CONFIGURATIONS & CONSTANTS
@@ -326,10 +327,11 @@ void setupFirebase() {
 
   config.api_key = FIREBASE_API_KEY;
   config.database_url = FIREBASE_DATABASE_URL;
+  config.signer.tokens.legacy_token = FIREBASE_DATABASE_SECRET;
   config.token_status_callback = tokenStatusCallback;
 
-  // Bypass authentication by setting test_mode to true
-  config.signer.test_mode = true;
+  // Sign in using database secret token
+  config.signer.test_mode = (strlen(FIREBASE_DATABASE_SECRET) == 0);
 
   // Inject &auth so the library compiles the state properly
   Firebase.begin(&config, &auth);
