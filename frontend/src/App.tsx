@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
+import { PowerFlowDiagram } from './components/PowerFlowDiagram';
 import { TelemetryGauges } from './components/TelemetryGauges';
 import { PowerChart } from './components/PowerChart';
 import type { ChartDataPoint } from './components/PowerChart';
@@ -47,9 +48,9 @@ export default function App() {
           powerW: Number(data.solar.estimatedPower.toFixed(2)),
           temp: Number(data.environment.temperature.toFixed(1))
         };
-        setChartHistory((prev) => [...prev.slice(-20), newPoint]);
+        setChartHistory((prev) => [...prev.slice(-25), newPoint]);
 
-        // Track voltage history for dV/dt
+        // Track voltage history
         batteryHistoryRef.current.push({
           timestamp: Math.floor(Date.now() / 1000),
           voltage: data.battery.voltage
@@ -58,7 +59,7 @@ export default function App() {
           batteryHistoryRef.current.shift();
         }
 
-        // Evaluate Microgrid Health
+        // Run AI Microgrid Evaluation
         const opt = evaluateMicrogrid(data, loadConfigs, batteryHistoryRef.current);
         setCurrentRisk(opt.failureRiskPercent);
         setCurrentWeather(opt.weather);
@@ -156,15 +157,25 @@ export default function App() {
           setActiveTab={setActiveTab}
         />
 
-        {/* 1. OVERVIEW TAB */}
+        {/* 1. DASHBOARD OVERVIEW PAGE */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Live Interactive Power Flow Diagram */}
+            <PowerFlowDiagram
+              telemetry={telemetry}
+              configs={loadConfigs}
+              failureRisk={currentRisk}
+              isConnected={isConnected}
+            />
+
+            {/* Primary KPI Gauges */}
             <TelemetryGauges
               telemetry={telemetry}
               failureRisk={currentRisk}
               isConnected={isConnected}
             />
 
+            {/* Power Curves & AI Stream */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <PowerChart data={chartHistory} />
               <DecisionLog
@@ -175,6 +186,7 @@ export default function App() {
               />
             </div>
 
+            {/* Actuators with Tactile Toggle Switches */}
             <LoadControlPanel
               loads={currentLoads}
               configs={loadConfigs}
@@ -186,21 +198,27 @@ export default function App() {
           </div>
         )}
 
-        {/* 2. TELEMETRY TAB */}
+        {/* 2. TELEMETRY & CURVES PAGE */}
         {activeTab === 'telemetry' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <TelemetryGauges
               telemetry={telemetry}
               failureRisk={currentRisk}
               isConnected={isConnected}
             />
             <PowerChart data={chartHistory} />
+            <PowerFlowDiagram
+              telemetry={telemetry}
+              configs={loadConfigs}
+              failureRisk={currentRisk}
+              isConnected={isConnected}
+            />
           </div>
         )}
 
-        {/* 3. LOAD CONFIG TAB */}
+        {/* 3. LOAD CONFIGURATION PAGE */}
         {activeTab === 'config' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <LoadControlPanel
               loads={currentLoads}
               configs={loadConfigs}
@@ -209,12 +227,18 @@ export default function App() {
               isSendingCommand={isSendingCommand}
               isConnected={isConnected}
             />
+            <PowerFlowDiagram
+              telemetry={telemetry}
+              configs={loadConfigs}
+              failureRisk={currentRisk}
+              isConnected={isConnected}
+            />
           </div>
         )}
 
-        {/* 4. SCENARIO SIMULATOR TAB */}
+        {/* 4. SCENARIO SIMULATOR PAGE */}
         {activeTab === 'simulator' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <ScenarioSimulator
               onRunSimulation={handleRunSimulation}
               onApplyToHardware={handleApplySimToHardware}
@@ -223,14 +247,20 @@ export default function App() {
           </div>
         )}
 
-        {/* 5. AI LOGS TAB */}
+        {/* 5. AI JUSTIFICATION LOG PAGE */}
         {activeTab === 'ai' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <DecisionLog
               logs={logs}
               weatherForecast={currentWeather}
               confidence={currentConfidence}
               failureRisk={currentRisk}
+            />
+            <PowerFlowDiagram
+              telemetry={telemetry}
+              configs={loadConfigs}
+              failureRisk={currentRisk}
+              isConnected={isConnected}
             />
           </div>
         )}
