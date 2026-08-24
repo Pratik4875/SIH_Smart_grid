@@ -1,30 +1,24 @@
 import { getSavedAiConfig } from './aiConfig';
-import { evaluateMicrogrid } from './utils/aiEngine';
-import type { OptimizationResult } from './utils/aiEngine';
-import type { TelemetryData, LoadConfig } from './types';
+import type { TelemetryData } from './types';
 
 export async function askGridBot(
   prompt: string,
-  telemetry: TelemetryData | null,
-  loadConfigs: Record<string, LoadConfig>,
-  batteryHistory: { timestamp: number; voltage: number }[]
-): Promise<{ text: string; relayPlan?: OptimizationResult }> {
-  
+  telemetry: TelemetryData | null
+): Promise<{ text: string }> {
   const config = getSavedAiConfig();
-  const fallbackPlan = telemetry ? evaluateMicrogrid(telemetry, loadConfigs, batteryHistory) : undefined;
-  
-  const systemPrompt = `You are GridBot, an AI specialized in microgrid management and project explanation.
-You control 3 hardware relays for load shedding to prevent battery depletion in a solar microgrid.
-You represent the "SolarGrid Microgrid OS" project for SIH 2026. If the user asks you to explain the project or the UI, act as a helpful guide outlining how we use ESP32, Firebase RTDB, and AI (Gemini/Grok) to build a robust microgrid controller.
-Current state:
-${telemetry ? `Battery: ${telemetry.battery.voltage}V (${telemetry.battery.percentage}%)
-Solar: ${telemetry.solar.voltage}V
-Temperature: ${telemetry.environment.temperature}°C, Humidity: ${telemetry.environment.humidity}%` : 'No live data.'}
 
-Answer the user's scenario. Be concise but highly knowledgeable.
-Fallback AI suggests: ${fallbackPlan?.justificationLog.actionTaken} - ${fallbackPlan?.justificationLog.justificationReason}`;
+  const systemPrompt = `You are GridBot, an intelligent microgrid management AI for the "SolarGrid Microgrid OS" project (SIH 2026).
+Your job is to advise the user on microgrid operations, load shedding, and respond to their scenarios (e.g., storms, night time, low battery). 
+You control 3 hardware relays. 
 
-  // 1. Try Gemini
+Current Telemetry:
+${telemetry ? `- Battery: ${telemetry.battery.voltage}V (${telemetry.battery.percentage}%)
+- Solar PV: ${telemetry.solar.voltage}V
+- Environment: ${telemetry.environment.temperature}°C, ${telemetry.environment.humidity}% Humidity` : 'No live telemetry connected.'}
+
+Answer concisely, act as a helpful AI assistant, and provide recommendations based on the scenario. If the user just says hello or asks non-energy questions, politely redirect them or answer briefly if appropriate.`;
+
+  // 1. Try Gemini First
   if (config.geminiApiKey) {
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${config.geminiApiKey}`, {
@@ -34,17 +28,21 @@ Fallback AI suggests: ${fallbackPlan?.justificationLog.actionTaken} - ${fallback
           contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${prompt}` }] }]
         })
       });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return { text: `✨ (Gemini)\n${text}`, relayPlan: fallbackPlan };
+      
+      if (!res.ok) {
+        throw new Error(`Gemini API Error: ${res.status}`);
       }
+      
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return { text: `✨ (Gemini)\n${text}` };
+      
     } catch (e) {
-      console.warn("Gemini failed, trying Grok...", e);
+      console.warn("Gemini request failed, falling back to Groq...", e);
     }
   }
 
-  // 2. Try Groq
+  // 2. Try Groq Fallback
   if (config.groqApiKey) {
     try {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -61,15 +59,19 @@ Fallback AI suggests: ${fallbackPlan?.justificationLog.actionTaken} - ${fallback
           ]
         })
       });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (text) return { text: `⚡ (Groq)\n${text}`, relayPlan: fallbackPlan };
+      
+      if (!res.ok) {
+        throw new Error(`Groq API Error: ${res.status}`);
       }
+      
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (text) return { text: `⚡ (Groq)\n${text}` };
+      
     } catch (e) {
-      console.warn("Groq failed...", e);
+      console.warn("Groq request failed...", e);
     }
   }
 
-  return { text: "Cloud AI APIs are not configured or failed to respond. Please configure your API keys in the settings." };
+  return { text: "Cloud AI APIs are not configured or both failed to respond. Please check your API keys in the settings and ensure you have not hit rate limits." };
 }

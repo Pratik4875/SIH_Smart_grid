@@ -107,30 +107,14 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
     const params = parseScenario(msg);
     const simTelemetry = buildSimTelemetry(params);
     
-    const { text: responseText, relayPlan } = await askGridBot(msg, simTelemetry, loadConfigs, batteryHistory);
+    const { text: responseText } = await askGridBot(msg, simTelemetry);
 
-      let actionText = '';
-      let shedText = '';
-
-      if (relayPlan) {
-        actionText = relayPlan.commandsToDispatch.length > 0
-          ? `\n\n**🔌 Relay Actions:**\n${relayPlan.commandsToDispatch.map(c => `• **${c.target}** → ${c.action}`).join('\n')}`
-          : '\n\n**✅ No relay changes needed** — all loads can continue safely.';
-
-        const shedNames = relayPlan.commandsToDispatch
-          .filter(c => c.action === 'OFF')
-          .map(c => loadConfigs[c.target]?.name || c.target);
-
-        shedText = shedNames.length > 0 ? `\n\nLoads being shed: ${shedNames.join(', ')}` : '';
-      }
-
-      botResponse = {
-        id: `b-${Date.now()}`,
-        role: 'bot',
-        text: responseText + actionText,
-        timestamp: Date.now(),
-        relayPlan: relayPlan
-      };
+    botResponse = {
+      id: `b-${Date.now()}`,
+      role: 'bot',
+      text: responseText,
+      timestamp: Date.now()
+    };
 
     setMessages(prev => [...prev, botResponse]);
     setIsTyping(false);
