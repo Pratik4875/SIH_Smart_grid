@@ -150,7 +150,7 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
             GridBot AI — Scenario Advisor
           </h2>
           <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '4px 0 0 0' }}>
-            Powered by Gemini & Grok with local edge-fallback
+            Powered by Gemini & Groq
           </p>
         </div>
       </div>
