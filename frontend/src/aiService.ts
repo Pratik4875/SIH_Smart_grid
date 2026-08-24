@@ -71,13 +71,5 @@ Fallback AI suggests: ${fallbackPlan?.justificationLog.actionTaken} - ${fallback
     }
   }
 
-  // 3. Local Fallback
-  if (fallbackPlan) {
-    return {
-      text: `⚡ (Local AI)\n**Fallback Analysis:**\n${fallbackPlan.justificationLog.justificationReason}\nFailure Risk: ${fallbackPlan.failureRiskPercent}%\nEst. Time to Depletion: ${fallbackPlan.justificationLog.estimatedTimeToDepletionMins} mins.`,
-      relayPlan: fallbackPlan
-    };
-  }
-
-  return { text: "I'm offline and have no telemetry data to perform a local fallback analysis." };
+  return { text: "Cloud AI APIs are not configured or failed to respond. Please configure your API keys in the settings." };
 }
