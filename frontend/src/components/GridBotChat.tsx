@@ -104,18 +104,10 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
 
     let botResponse: ChatMessage;
 
-    if (!isOnTopic(msg)) {
-      botResponse = {
-        id: `b-${Date.now()}`,
-        role: 'bot',
-        text: "🚫 That scenario seems outside my expertise. I'm specialized in renewable energy microgrid management. For other queries, please contact us at **team@synthrobotics.dev**",
-        timestamp: Date.now()
-      };
-    } else {
-      const params = parseScenario(msg);
-      const simTelemetry = buildSimTelemetry(params);
-      
-      const { text: responseText, relayPlan } = await askGridBot(msg, simTelemetry, loadConfigs, batteryHistory);
+    const params = parseScenario(msg);
+    const simTelemetry = buildSimTelemetry(params);
+    
+    const { text: responseText, relayPlan } = await askGridBot(msg, simTelemetry, loadConfigs, batteryHistory);
 
       let actionText = '';
       let shedText = '';
@@ -135,14 +127,13 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
       botResponse = {
         id: `b-${Date.now()}`,
         role: 'bot',
-        text: `${responseText}${actionText}${shedText}`,
+        text: responseText + actionText,
         timestamp: Date.now(),
-        relayPlan
+        relayPlan: relayPlan
       };
-    }
 
-    setIsTyping(false);
     setMessages(prev => [...prev, botResponse]);
+    setIsTyping(false);
   };
 
   const formatMessage = (text: string) => {
