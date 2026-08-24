@@ -42,17 +42,18 @@ Answer concisely, act as a helpful AI assistant, and provide recommendations bas
     }
   }
 
-  // 2. Try Groq Fallback
-  if (config.groqApiKey) {
+  // 2. Try Groq Fallback (support old grokApiKey from localStorage if present)
+  const groqKey = config.groqApiKey || (config as any).grokApiKey;
+  if (groqKey) {
     try {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.groqApiKey}`
+          'Authorization': `Bearer ${groqKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: 'openai/gpt-oss-20b',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
