@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Database, Check, RefreshCw, Key, Bot } from 'lucide-react';
+import { X, Database, Check, RefreshCw, Key, Bot, Zap } from 'lucide-react';
 import { getSavedFirebaseConfig, saveFirebaseConfig, DEFAULT_DEVICE_ID } from '../firebase';
 import { getSavedAiConfig, saveAiConfig } from '../aiConfig';
 import { useTheme } from '../context/ThemeContext';
