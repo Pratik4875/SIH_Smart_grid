@@ -100,14 +100,13 @@ export const FirebaseSetupModal: React.FC<FirebaseSetupModalProps> = ({ isOpen, 
               </div>
             </div>
 
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: colors.textSecondary, display: 'flex', justifyContent: 'space-between' }}>
-                <span>Grok API Key (Backup)</span>
-                <span style={{ color: colors.textMuted, fontWeight: 400 }}>Optional</span>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: colors.textSecondary }}>
+                Groq API Key (Fallback AI)
               </label>
               <div style={{ position: 'relative' }}>
-                <Key style={{ position: 'absolute', left: '12px', top: '16px', width: '14px', height: '14px', color: colors.textMuted }} />
-                <input type="password" value={aiConfig.grokApiKey} onChange={(e) => setAiConfig({ ...aiConfig, grokApiKey: e.target.value })} placeholder="xai-..." style={{ ...inputStyle, paddingLeft: '36px' }} />
+                <Zap style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: colors.accent }} />
+                <input type="password" value={aiConfig.groqApiKey} onChange={(e) => setAiConfig({ ...aiConfig, groqApiKey: e.target.value })} placeholder="gsk_..." style={{ ...inputStyle, paddingLeft: '36px' }} />
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 export const DEFAULT_AI_CONFIG = {
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || "",
-  grokApiKey: import.meta.env.VITE_GROK_API_KEY || "",
+  groqApiKey: import.meta.env.VITE_GROQ_API_KEY || "",
 };
 
 export function getSavedAiConfig() {

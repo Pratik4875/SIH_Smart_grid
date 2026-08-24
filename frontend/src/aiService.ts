@@ -44,17 +44,17 @@ Fallback AI suggests: ${fallbackPlan?.justificationLog.actionTaken} - ${fallback
     }
   }
 
-  // 2. Try Grok
-  if (config.grokApiKey) {
+  // 2. Try Groq
+  if (config.groqApiKey) {
     try {
-      const res = await fetch('https://api.x.ai/v1/chat/completions', {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.grokApiKey}`
+          'Authorization': `Bearer ${config.groqApiKey}`
         },
         body: JSON.stringify({
-          model: 'grok-beta',
+          model: 'llama-3.1-8b-instant',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
@@ -64,10 +64,10 @@ Fallback AI suggests: ${fallbackPlan?.justificationLog.actionTaken} - ${fallback
       if (res.ok) {
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content;
-        if (text) return { text: `🦊 (Grok)\n${text}`, relayPlan: fallbackPlan };
+        if (text) return { text: `⚡ (Groq)\n${text}`, relayPlan: fallbackPlan };
       }
     } catch (e) {
-      console.warn("Grok failed, using local fallback...", e);
+      console.warn("Groq failed...", e);
     }
   }
 
