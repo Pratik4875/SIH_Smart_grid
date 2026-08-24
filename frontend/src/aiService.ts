@@ -18,6 +18,9 @@ ${telemetry ? `- Battery: ${telemetry.battery.voltage}V (${telemetry.battery.per
 
 Answer concisely, act as a helpful AI assistant, and provide recommendations based on the scenario. If the user just says hello or asks non-energy questions, politely redirect them or answer briefly if appropriate.`;
 
+  let geminiError = "Key not configured";
+  let groqError = "Key not configured";
+
   // 1. Try Gemini First
   if (config.geminiApiKey) {
     try {
@@ -30,15 +33,17 @@ Answer concisely, act as a helpful AI assistant, and provide recommendations bas
       });
       
       if (!res.ok) {
-        throw new Error(`Gemini API Error: ${res.status}`);
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
       }
       
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) return { text: `✨ (Gemini)\n${text}` };
       
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Gemini request failed, falling back to Groq...", e);
+      geminiError = e.message || String(e);
     }
   }
 
@@ -62,17 +67,21 @@ Answer concisely, act as a helpful AI assistant, and provide recommendations bas
       });
       
       if (!res.ok) {
-        throw new Error(`Groq API Error: ${res.status}`);
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
       }
       
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content;
       if (text) return { text: `⚡ (Groq)\n${text}` };
       
-    } catch (e) {
+    } catch (e: any) {
       console.warn("Groq request failed...", e);
+      groqError = e.message || String(e);
     }
   }
 
-  return { text: "Cloud AI APIs are not configured or both failed to respond. Please check your API keys in the settings and ensure you have not hit rate limits." };
+  return { 
+    text: `❌ **API Failure Diagnostics:**\n\n**Gemini Error:** ${geminiError}\n\n**Groq Error:** ${groqError}\n\nPlease check your browser console or ensure you have entered valid API keys in the settings.` 
+  };
 }
