@@ -15,6 +15,7 @@ interface ChatMessage {
   text: string;
   timestamp: number;
   relayPlan?: OptimizationResult;
+  configUpdate?: Record<string, LoadConfig>;
 }
 
 interface GridBotChatProps {
@@ -22,6 +23,7 @@ interface GridBotChatProps {
   batteryHistory: { timestamp: number; voltage: number }[];
   isConnected: boolean;
   onApplyToHardware?: (commands: { target: 'RLY-001' | 'RLY-002' | 'RLY-003'; action: 'ON' | 'OFF' }[]) => Promise<void>;
+  onUpdateConfig?: (configs: Record<string, LoadConfig>) => Promise<void>;
 }
 
 const ENERGY_KEYWORDS = ['battery', 'solar', 'relay', 'power', 'load', 'shed', 'storm', 'night', 'rain', 'energy', 'grid', 'voltage', 'watt', 'charge', 'discharge', 'icu', 'hospital', 'pump', 'light', 'street', 'emergency', 'critical', 'brownout', 'blackout', 'outage', 'panel', 'esp32', 'microgrid', 'renewable', 'actuator', 'mosfet', 'temperature', 'humidity', 'cloudy', 'sunny', 'peak'];
@@ -71,7 +73,7 @@ function buildSimTelemetry(params: { battV: number; solarV: number; temp: number
   };
 }
 
-export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHistory, isConnected, onApplyToHardware }) => {
+export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHistory, isConnected, onApplyToHardware, onUpdateConfig }) => {
   const { colors } = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -113,11 +115,36 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
     const history = messages.filter(m => m.id !== 'welcome');
     const { text: responseText } = await askGridBot(msg, simTelemetry, history);
 
+    let finalResponseText = responseText;
+    let configUpdate: Record<string, LoadConfig> | undefined = undefined;
+
+    // Parse out configUpdate if present
+    const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1]);
+        if (parsed.configUpdate) {
+          configUpdate = parsed.configUpdate;
+          // Fill in required fields for config Update
+          Object.keys(configUpdate!).forEach(key => {
+            configUpdate![key].id = key;
+            if (!configUpdate![key].icon) configUpdate![key].icon = 'zap';
+            if (!configUpdate![key].description) configUpdate![key].description = `Assigned by GridBot`;
+          });
+          // Remove the JSON block from the displayed text
+          finalResponseText = responseText.replace(jsonMatch[0], '').trim();
+        }
+      } catch (e) {
+        console.warn("Failed to parse configUpdate JSON from GridBot", e);
+      }
+    }
+
     botResponse = {
       id: `b-${Date.now()}`,
       role: 'bot',
-      text: responseText,
-      timestamp: Date.now()
+      text: finalResponseText,
+      timestamp: Date.now(),
+      configUpdate
     };
 
     setMessages(prev => [...prev, botResponse]);
@@ -221,15 +248,18 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
                 {msg.relayPlan && msg.relayPlan.commandsToDispatch.length > 0 && onApplyToHardware && isConnected && (
                   <button
                     onClick={() => onApplyToHardware(msg.relayPlan!.commandsToDispatch)}
-                    style={{
-                      marginTop: '12px', padding: '8px 16px', borderRadius: '8px',
-                      background: colors.accent, color: '#000', fontSize: '12px', fontWeight: 700,
-                      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                      boxShadow: `0 0 20px ${colors.accentGlow}`
-                    }}
+                    style={{ marginTop: '12px', padding: '8px 16px', borderRadius: '8px', background: colors.accent, color: '#000', border: 'none', fontWeight: 700, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content' }}
                   >
-                    <Zap style={{ width: '14px', height: '14px' }} />
-                    Apply to Hardware
+                    <Zap size={14} /> Apply AI Plan to Hardware
+                  </button>
+                )}
+
+                {msg.configUpdate && onUpdateConfig && isConnected && (
+                  <button
+                    onClick={() => onUpdateConfig(msg.configUpdate!)}
+                    style={{ marginTop: '12px', padding: '8px 16px', borderRadius: '8px', background: 'transparent', border: `1px solid ${colors.accent}`, color: colors.accent, fontWeight: 700, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content' }}
+                  >
+                    <Zap size={14} /> Apply Appliance Mapping to Dashboard
                   </button>
                 )}
               </div>

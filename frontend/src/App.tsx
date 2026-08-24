@@ -157,6 +157,7 @@ const AppContent: React.FC = () => {
                 batteryHistory={batteryHistory}
                 isConnected={isConnected}
                 onApplyToHardware={handleApplySimToHardware}
+                onUpdateConfig={updateDeviceConfig}
               />
             </motion.div>
           )}

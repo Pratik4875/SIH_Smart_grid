@@ -12,6 +12,17 @@ export async function askGridBot(
 Your job is to advise the user on microgrid operations, load shedding, and respond to their scenarios (e.g., storms, night time, low battery). 
 You control 3 hardware relays. 
 
+If the user asks you to assign appliances or relays (e.g. Fridge, AC, Monitor), you MUST append a JSON block at the very end of your response exactly like this:
+\`\`\`json
+{
+  "configUpdate": {
+    "RLY-001": { "name": "Appliance 1", "priority": "CRITICAL", "nominalWatts": 150 },
+    "RLY-002": { "name": "Appliance 2", "priority": "LOW", "nominalWatts": 1000 },
+    "RLY-003": { "name": "Appliance 3", "priority": "MEDIUM", "nominalWatts": 50 }
+  }
+}
+\`\`\`
+
 Current Telemetry:
 ${telemetry ? `- Battery: ${telemetry.battery.voltage}V (${telemetry.battery.percentage}%)
 - Solar PV: ${telemetry.solar.voltage}V
