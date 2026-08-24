@@ -1,5 +1,7 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Send, Bot, User, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
@@ -197,7 +199,22 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
                 background: msg.role === 'user' ? colors.accent + '18' : colors.bgCardHover,
                 border: `1px solid ${msg.role === 'user' ? colors.borderAccent : colors.border}`
               }}>
-                {formatMessage(msg.text)}
+                <div className="markdown-body" style={{ color: 'inherit' }}>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({node, ...props}) => <table style={{borderCollapse: 'collapse', width: '100%', marginTop: '8px', marginBottom: '8px'}} {...props} />,
+                      th: ({node, ...props}) => <th style={{border: `1px solid ${colors.border}`, padding: '8px', background: 'rgba(255,255,255,0.05)', textAlign: 'left', fontWeight: 700}} {...props} />,
+                      td: ({node, ...props}) => <td style={{border: `1px solid ${colors.border}`, padding: '8px'}} {...props} />,
+                      p: ({node, ...props}) => <p style={{margin: '0 0 8px 0'}} {...props} />,
+                      ul: ({node, ...props}) => <ul style={{margin: '0 0 8px 0', paddingLeft: '20px'}} {...props} />,
+                      ol: ({node, ...props}) => <ol style={{margin: '0 0 8px 0', paddingLeft: '20px'}} {...props} />,
+                      li: ({node, ...props}) => <li style={{marginBottom: '4px'}} {...props} />
+                    }}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
+                </div>
 
                 {msg.relayPlan && msg.relayPlan.commandsToDispatch.length > 0 && onApplyToHardware && isConnected && (
                   <button
