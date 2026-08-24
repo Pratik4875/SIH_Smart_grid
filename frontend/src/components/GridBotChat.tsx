@@ -117,8 +117,9 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
 
     let finalResponseText = responseText;
     let configUpdate: Record<string, LoadConfig> | undefined = undefined;
+    let relayPlan: OptimizationResult | undefined = undefined;
 
-    // Parse out configUpdate if present
+    // Parse out configUpdate and relayPlan if present
     const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
     if (jsonMatch) {
       try {
@@ -131,11 +132,17 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
             if (!configUpdate![key].icon) configUpdate![key].icon = 'zap';
             if (!configUpdate![key].description) configUpdate![key].description = `Assigned by GridBot`;
           });
+        }
+        if (parsed.relayPlan) {
+          relayPlan = parsed.relayPlan as OptimizationResult;
+        }
+        
+        if (parsed.configUpdate || parsed.relayPlan) {
           // Remove the JSON block from the displayed text
           finalResponseText = responseText.replace(jsonMatch[0], '').trim();
         }
       } catch (e) {
-        console.warn("Failed to parse configUpdate JSON from GridBot", e);
+        console.warn("Failed to parse JSON from GridBot", e);
       }
     }
 
@@ -144,7 +151,8 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
       role: 'bot',
       text: finalResponseText,
       timestamp: Date.now(),
-      configUpdate
+      configUpdate,
+      relayPlan
     };
 
     setMessages(prev => [...prev, botResponse]);

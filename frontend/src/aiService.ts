@@ -23,6 +23,19 @@ If the user asks you to assign appliances or relays (e.g. Fridge, AC, Monitor), 
 }
 \`\`\`
 
+If you recommend turning any relays ON or OFF to manage load, you MUST append a JSON block exactly like this:
+\`\`\`json
+{
+  "relayPlan": {
+    "commandsToDispatch": [
+      { "target": "RLY-001", "action": "OFF" },
+      { "target": "RLY-002", "action": "ON" }
+    ]
+  }
+}
+\`\`\`
+(You can output both configUpdate and relayPlan in the same JSON object if needed).
+
 Current Telemetry:
 ${telemetry ? `- Battery: ${telemetry.battery.voltage}V (${telemetry.battery.percentage}%)
 - Solar PV: ${telemetry.solar.voltage}V
