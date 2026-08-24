@@ -17,6 +17,22 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({ loads, confi
   const { colors } = useTheme();
   const [editingLoadId, setEditingLoadId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<LoadConfig | null>(null);
+  const [optimisticLoads, setOptimisticLoads] = useState<Record<string, 'ON' | 'OFF'>>({});
+
+  // Clear optimistic state when actual telemetry catches up
+  React.useEffect(() => {
+    setOptimisticLoads(prev => {
+      const next = { ...prev };
+      let changed = false;
+      loads.forEach(l => {
+        if (next[l.id] === l.physicalState) {
+          delete next[l.id];
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [loads]);
 
   // If disconnected or no telemetry, provide dummy states for UI rendering
   const activeLoads = loads.length > 0 ? loads : [
@@ -70,9 +86,10 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({ loads, confi
           icon: 'zap'
         };
 
-        const Icon = getIcon(config.icon);
+        const effectiveState = optimisticLoads[load.id] || load.physicalState;
+        const isOn = isConnected && effectiveState === 'ON';
         const pColor = getPriorityColor(config.priority);
-        const isOn = isConnected && load.physicalState === 'ON';
+        const Icon = getIcon(config.icon);
         const isEditing = editingLoadId === load.id;
 
         return (
@@ -209,7 +226,11 @@ export const LoadControlPanel: React.FC<LoadControlPanelProps> = ({ loads, confi
 
                   {/* Gaming style toggle switch */}
                   <button
-                    onClick={() => onToggleLoad(load.id as 'RLY-001' | 'RLY-002' | 'RLY-003', isOn ? 'OFF' : 'ON')}
+                    onClick={() => {
+                      const newAction = isOn ? 'OFF' : 'ON';
+                      setOptimisticLoads(prev => ({ ...prev, [load.id]: newAction }));
+                      onToggleLoad(load.id as 'RLY-001' | 'RLY-002' | 'RLY-003', newAction);
+                    }}
                     style={{
                       position: 'relative', width: '56px', height: '32px', borderRadius: '9999px',
                       background: isOn ? colors.accent : colors.bgInput,
