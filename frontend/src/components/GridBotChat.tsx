@@ -109,7 +109,9 @@ export const GridBotChat: React.FC<GridBotChatProps> = ({ loadConfigs, batteryHi
     const params = parseScenario(msg);
     const simTelemetry = buildSimTelemetry(params);
     
-    const { text: responseText } = await askGridBot(msg, simTelemetry);
+    // Pass previous messages as history, excluding the initial welcome message
+    const history = messages.filter(m => m.id !== 'welcome');
+    const { text: responseText } = await askGridBot(msg, simTelemetry, history);
 
     botResponse = {
       id: `b-${Date.now()}`,

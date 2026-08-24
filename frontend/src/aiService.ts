@@ -3,7 +3,8 @@ import type { TelemetryData } from './types';
 
 export async function askGridBot(
   prompt: string,
-  telemetry: TelemetryData | null
+  telemetry: TelemetryData | null,
+  history: any[] = []
 ): Promise<{ text: string }> {
   const config = getSavedAiConfig();
 
@@ -24,11 +25,20 @@ Answer concisely, act as a helpful AI assistant, and provide recommendations bas
   // 1. Try Gemini First
   if (config.geminiApiKey) {
     try {
+      const geminiHistory = history.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }));
+      
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${config.geminiApiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${prompt}` }] }]
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [
+            ...geminiHistory,
+            { role: 'user', parts: [{ text: prompt }] }
+          ]
         })
       });
       
@@ -51,6 +61,11 @@ Answer concisely, act as a helpful AI assistant, and provide recommendations bas
   const groqKey = config.groqApiKey || (config as any).grokApiKey;
   if (groqKey) {
     try {
+      const groqHistory = history.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
+
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 
@@ -61,6 +76,7 @@ Answer concisely, act as a helpful AI assistant, and provide recommendations bas
           model: 'openai/gpt-oss-20b',
           messages: [
             { role: 'system', content: systemPrompt },
+            ...groqHistory,
             { role: 'user', content: prompt }
           ]
         })
